@@ -34,6 +34,16 @@ const (
 	ERR TokenType = "ERR"
 )
 
+var OperatorTokensType = map[byte]TokenType{
+	'+': PLUS,
+	'-': MINUS,
+	'*': MUL,
+	'/': DIV,
+	'^': POW,
+	'(': LPAREN,
+	')': RPAREN,
+}
+
 type Tokenizer struct {
 	Input        string
 	CurPosition  int
@@ -87,44 +97,29 @@ func (t *Tokenizer) readNumber() Token {
 	return token
 }
 
-func (t *Tokenizer) NextToken() Token {
+func (t *Tokenizer) nextToken() Token {
 	t.skipWhitespace()
 	nextToken := Token{Type: EOF, Position: len(t.Input), Len: 1}
 
-	switch t.ch {
-	case 0:
+	if t.ch == 0 {
 		return nextToken
-	case '+':
-		nextToken = Token{Type: PLUS, Position: t.CurPosition, Len: 1}
-	case '-':
-		nextToken = Token{Type: MINUS, Position: t.CurPosition, Len: 1}
-	case '*':
-		nextToken = Token{Type: MUL, Position: t.CurPosition, Len: 1}
-	case '/':
-		nextToken = Token{Type: DIV, Position: t.CurPosition, Len: 1}
-	case '^':
-		nextToken = Token{Type: POW, Position: t.CurPosition, Len: 1}
-	case '(':
-		nextToken = Token{Type: LPAREN, Position: t.CurPosition, Len: 1}
-	case ')':
-		nextToken = Token{Type: RPAREN, Position: t.CurPosition, Len: 1}
-	default:
-		if unicode.IsDigit(rune(t.ch)) {
-			return t.readNumber()
-		} else {
-			nextToken = Token{
-				Type:     ERR,
-				Position: t.CurPosition,
-				Len:      1,
-			}
-			errorMsg := fmt.Errorf(
-				"at [%d,%d]: %w",
-				nextToken.Position,
-				nextToken.Position+nextToken.Len,
-				ErrIllegalCharacter,
-			)
-			t.Errors = append(t.Errors, errorMsg)
+	} else if OpType, ok := OperatorTokensType[t.ch]; ok {
+		nextToken = Token{Type: OpType, Position: t.CurPosition, Len: 1}
+	} else if unicode.IsDigit(rune(t.ch)) {
+		return t.readNumber()
+	} else {
+		nextToken = Token{
+			Type:     ERR,
+			Position: t.CurPosition,
+			Len:      1,
 		}
+		errorMsg := fmt.Errorf(
+			"at [%d,%d]: %w",
+			nextToken.Position,
+			nextToken.Position+nextToken.Len,
+			ErrIllegalCharacter,
+		)
+		t.Errors = append(t.Errors, errorMsg)
 	}
 
 	t.readChar()
@@ -134,11 +129,11 @@ func (t *Tokenizer) NextToken() Token {
 
 func (t *Tokenizer) Tokenize() []Token {
 	result := make([]Token, 0)
-	token := t.NextToken()
+	token := t.nextToken()
 	result = append(result, token)
 
 	for token.Type != EOF {
-		token = t.NextToken()
+		token = t.nextToken()
 		result = append(result, token)
 	}
 	return result
