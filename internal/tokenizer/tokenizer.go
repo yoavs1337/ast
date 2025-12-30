@@ -58,13 +58,6 @@ func (t *Tokenizer) skipWhitespace() {
 	}
 }
 
-func (t *Tokenizer) peekChar() byte {
-	if t.CurPosition == len(t.Input)-1 {
-		return 0
-	}
-	return t.Input[t.NextPosition]
-}
-
 func (t *Tokenizer) readNumber() Token {
 	token := Token{Type: INT, Position: t.CurPosition, Len: 1}
 	tokenLen := 0
