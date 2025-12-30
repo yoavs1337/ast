@@ -1,6 +1,7 @@
 package tokenizer
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 )
@@ -50,18 +51,48 @@ func TestTokenize(t *testing.T) {
 			},
 			Error: nil,
 		},
+		{
+			Input: "4..5",
+			Output: []Token{
+				{Type: ERR, Position: 0, Len: 4},
+				{Type: EOF, Position: 4, Len: 1},
+			},
+			ExpectedTokenizationErrors: []error{ErrMultipleDecimalPoints},
+			Error:                      nil,
+		},
+		{
+			Input: "4.5%",
+			Output: []Token{
+				{Type: FLOAT, Position: 0, Len: 3},
+				{Type: ERR, Position: 3, Len: 1},
+				{Type: EOF, Position: 4, Len: 1},
+			},
+			ExpectedTokenizationErrors: []error{ErrIllegalCharacter},
+			Error:                      nil,
+		},
+		{
+			Input:  "",
+			Output: []Token{{Type: EOF, Position: 0, Len: 1}},
+			Error:  ErrEmptyString,
+		},
 	}
 
 	for _, test := range tests {
 		tokenizer, err := NewTokenizer(test.Input)
-		if err != test.Error {
+
+		if !errors.Is(err, test.Error) {
 			t.Error("differing errors between test and function result")
 		}
+
 		tokenizedInput := tokenizer.Tokenize()
 		if len(tokenizedInput) != len(test.Output) {
 			fmt.Println(tokenizedInput)
-			t.Errorf(`len of tokenizedInput: %d
-			len of output: %d\n`, len(tokenizedInput), len(test.Output))
+			t.Errorf(
+				`len of tokenizer's Tokenize output: %d
+				len of expected Tokenize output: %d\n`,
+				len(tokenizedInput),
+				len(test.Output),
+			)
 		} else {
 			for j, token := range tokenizedInput {
 				if test.Output[j] != token {
@@ -70,5 +101,21 @@ func TestTokenize(t *testing.T) {
 			}
 		}
 
+		if len(test.ExpectedTokenizationErrors) > 0 {
+			if len(test.ExpectedTokenizationErrors) != len(tokenizer.Errors) {
+				t.Errorf(
+					`len of tokenizer's Error output: %d
+					len of expected Error output: %d`,
+					len(test.ExpectedTokenizationErrors),
+					len(tokenizer.Errors),
+				)
+			} else {
+				for i := range tokenizer.Errors {
+					if !errors.Is(tokenizer.Errors[i], test.ExpectedTokenizationErrors[i]) {
+						t.Errorf("differing errors between test and function result")
+					}
+				}
+			}
+		}
 	}
 }

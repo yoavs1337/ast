@@ -62,27 +62,24 @@ func (t *Tokenizer) readNumber() Token {
 	token := Token{Type: INT, Position: t.CurPosition, Len: 1}
 	tokenLen := 0
 
-	for unicode.IsDigit(rune(t.ch)) {
+	for unicode.IsDigit(rune(t.ch)) || t.ch == '.' {
 		t.readChar()
 		tokenLen++
 
 		if t.ch == '.' && token.Type == INT {
 			token.Type = FLOAT
-			t.readChar()
-			tokenLen++
 		} else if t.ch == '.' {
 			token.Type = ERR
-			t.readChar()
-			tokenLen++
 		}
 	}
 
 	token.Len = tokenLen
 	if token.Type == ERR {
 		errorMsg := fmt.Errorf(
-			"number with multiple decimal points at [%d:%d]",
+			"at [%d:%d]: %w",
 			token.Position,
 			token.Position+token.Len,
+			ErrMultipleDecimalPoints,
 		)
 		t.Errors = append(t.Errors, errorMsg)
 	}
@@ -121,9 +118,10 @@ func (t *Tokenizer) NextToken() Token {
 				Len:      1,
 			}
 			errorMsg := fmt.Errorf(
-				"illegal character at [%d,%d]",
+				"at [%d,%d]: %w",
 				nextToken.Position,
 				nextToken.Position+nextToken.Len,
+				ErrIllegalCharacter,
 			)
 			t.Errors = append(t.Errors, errorMsg)
 		}
@@ -148,7 +146,7 @@ func (t *Tokenizer) Tokenize() []Token {
 
 func NewTokenizer(input string) (Tokenizer, error) {
 	if len(input) == 0 {
-		return Tokenizer{}, fmt.Errorf("tokenizer cannot be created for an empty string")
+		return Tokenizer{}, ErrEmptyString
 	}
 	return Tokenizer{
 		Input:        input,
