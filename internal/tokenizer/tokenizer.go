@@ -9,8 +9,8 @@ type TokenType string
 
 type Token struct {
 	Type     TokenType
-	Literal  string
 	Position int
+	Len      int
 }
 
 const (
@@ -39,6 +39,7 @@ type Tokenizer struct {
 	CurPosition  int
 	NextPosition int
 	ch           byte
+	Errors       []error
 }
 
 func (t *Tokenizer) readChar() {
@@ -65,60 +66,73 @@ func (t *Tokenizer) peekChar() byte {
 }
 
 func (t *Tokenizer) readNumber() Token {
-	token := Token{Type: INT, Literal: "", Position: t.CurPosition}
-	value := string(t.ch)
+	token := Token{Type: INT, Position: t.CurPosition, Len: 1}
+	tokenLen := 1
 
 	for unicode.IsDigit(rune(t.peekChar())) {
 		t.readChar()
-		value = value + string(t.ch)
+		tokenLen++
 
 		if t.peekChar() == '.' && token.Type == INT {
 			token.Type = FLOAT
-			value = value + "."
 			t.readChar()
+			tokenLen++
 		} else if t.peekChar() == '.' {
-			return Token{
-				Type:     ERR,
-				Literal:  "two decimal points in a single number",
-				Position: t.NextPosition,
-			}
+			token.Type = ERR
+			t.readChar()
+			tokenLen++
 		}
 	}
 
-	token.Literal = value
+	token.Len = tokenLen
+	if token.Type == ERR {
+		errorMsg := fmt.Errorf(
+			"number with multiple decimal points at [%d:%d]",
+			token.Position,
+			token.Position+token.Len,
+		)
+		t.Errors = append(t.Errors, errorMsg)
+	}
+
 	return token
 }
 
 func (t *Tokenizer) NextToken() Token {
 	t.skipWhitespace()
-	nextToken := Token{Type: EOF, Literal: "", Position: len(t.Input)}
+	nextToken := Token{Type: EOF, Position: len(t.Input), Len: 1}
 
 	switch t.ch {
 	case 0:
 		return nextToken
 	case '+':
-		nextToken = Token{Type: PLUS, Literal: "", Position: t.CurPosition}
+		nextToken = Token{Type: PLUS, Position: t.CurPosition, Len: 1}
 	case '-':
-		nextToken = Token{Type: MINUS, Literal: "", Position: t.CurPosition}
+		nextToken = Token{Type: MINUS, Position: t.CurPosition, Len: 1}
 	case '*':
-		nextToken = Token{Type: MUL, Literal: "", Position: t.CurPosition}
+		nextToken = Token{Type: MUL, Position: t.CurPosition, Len: 1}
 	case '/':
-		nextToken = Token{Type: DIV, Literal: "", Position: t.CurPosition}
+		nextToken = Token{Type: DIV, Position: t.CurPosition, Len: 1}
 	case '^':
-		nextToken = Token{Type: POW, Literal: "", Position: t.CurPosition}
+		nextToken = Token{Type: POW, Position: t.CurPosition, Len: 1}
 	case '(':
-		nextToken = Token{Type: LPAREN, Literal: "", Position: t.CurPosition}
+		nextToken = Token{Type: LPAREN, Position: t.CurPosition, Len: 1}
 	case ')':
-		nextToken = Token{Type: RPAREN, Literal: "", Position: t.CurPosition}
+		nextToken = Token{Type: RPAREN, Position: t.CurPosition, Len: 1}
 	default:
 		if unicode.IsDigit(rune(t.ch)) {
 			nextToken = t.readNumber()
 		} else {
 			nextToken = Token{
 				Type:     ERR,
-				Literal:  "illegal character",
 				Position: t.CurPosition,
+				Len:      1,
 			}
+			errorMsg := fmt.Errorf(
+				"illegal character at [%d,%d]",
+				nextToken.Position,
+				nextToken.Position+nextToken.Len,
+			)
+			t.Errors = append(t.Errors, errorMsg)
 		}
 	}
 

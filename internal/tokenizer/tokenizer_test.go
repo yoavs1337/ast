@@ -15,20 +15,20 @@ func TestTokenize(t *testing.T) {
 		{
 			Input: "10 + 55",
 			Output: []Token{
-				{Type: INT, Literal: "10", Position: 0},
-				{Type: PLUS, Literal: "", Position: 3},
-				{Type: INT, Literal: "55", Position: 5},
-				{Type: EOF, Literal: "", Position: 7},
+				{Type: INT, Position: 0, Len: 2},
+				{Type: PLUS, Position: 3, Len: 1},
+				{Type: INT, Position: 5, Len: 2},
+				{Type: EOF, Position: 7, Len: 1},
 			},
 			Error: nil,
 		},
 		{
 			Input: "10.3 - 4 ",
 			Output: []Token{
-				{Type: FLOAT, Literal: "10.3", Position: 0},
-				{Type: MINUS, Literal: "", Position: 5},
-				{Type: INT, Literal: "4", Position: 7},
-				{Type: EOF, Literal: "", Position: 9},
+				{Type: FLOAT, Position: 0, Len: 4},
+				{Type: MINUS, Position: 5, Len: 1},
+				{Type: INT, Position: 7, Len: 1},
+				{Type: EOF, Position: 9, Len: 1},
 			},
 			Error: nil,
 		},
