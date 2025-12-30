@@ -67,17 +67,17 @@ func (t *Tokenizer) peekChar() byte {
 
 func (t *Tokenizer) readNumber() Token {
 	token := Token{Type: INT, Position: t.CurPosition, Len: 1}
-	tokenLen := 1
+	tokenLen := 0
 
-	for unicode.IsDigit(rune(t.peekChar())) {
+	for unicode.IsDigit(rune(t.ch)) {
 		t.readChar()
 		tokenLen++
 
-		if t.peekChar() == '.' && token.Type == INT {
+		if t.ch == '.' && token.Type == INT {
 			token.Type = FLOAT
 			t.readChar()
 			tokenLen++
-		} else if t.peekChar() == '.' {
+		} else if t.ch == '.' {
 			token.Type = ERR
 			t.readChar()
 			tokenLen++
@@ -120,7 +120,7 @@ func (t *Tokenizer) NextToken() Token {
 		nextToken = Token{Type: RPAREN, Position: t.CurPosition, Len: 1}
 	default:
 		if unicode.IsDigit(rune(t.ch)) {
-			nextToken = t.readNumber()
+			return t.readNumber()
 		} else {
 			nextToken = Token{
 				Type:     ERR,
