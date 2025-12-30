@@ -26,8 +26,8 @@ const (
 	POW   TokenType = "POW"
 
 	// parentheses
-	LPAREN TokenType = "LPARAN"
-	RPAREN TokenType = "RPARAN"
+	LPAREN TokenType = "LPAREN"
+	RPAREN TokenType = "RPAREN"
 
 	// special tokens
 	EOF TokenType = "EOF"
