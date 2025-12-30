@@ -1,13 +1,15 @@
 package tokenizer
 
 import (
+	"fmt"
 	"testing"
 )
 
 type TestTokenizerStruct struct {
-	Input  string
-	Output []Token
-	Error  error
+	Input                      string
+	Output                     []Token
+	ExpectedTokenizationErrors []error
+	Error                      error
 }
 
 func TestTokenize(t *testing.T) {
@@ -32,6 +34,22 @@ func TestTokenize(t *testing.T) {
 			},
 			Error: nil,
 		},
+		{
+			Input: "(10 * 5^3) / 4.5",
+			Output: []Token{
+				{Type: LPAREN, Position: 0, Len: 1},
+				{Type: INT, Position: 1, Len: 2},
+				{Type: MUL, Position: 4, Len: 1},
+				{Type: INT, Position: 6, Len: 1},
+				{Type: POW, Position: 7, Len: 1},
+				{Type: INT, Position: 8, Len: 1},
+				{Type: RPAREN, Position: 9, Len: 1},
+				{Type: DIV, Position: 11, Len: 1},
+				{Type: FLOAT, Position: 13, Len: 3},
+				{Type: EOF, Position: 16, Len: 1},
+			},
+			Error: nil,
+		},
 	}
 
 	for _, test := range tests {
@@ -41,6 +59,7 @@ func TestTokenize(t *testing.T) {
 		}
 		tokenizedInput := tokenizer.Tokenize()
 		if len(tokenizedInput) != len(test.Output) {
+			fmt.Println(tokenizedInput)
 			t.Errorf(`len of tokenizedInput: %d
 			len of output: %d\n`, len(tokenizedInput), len(test.Output))
 		} else {
